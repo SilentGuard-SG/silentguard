@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SilentGuard · 实时支付助手</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/live.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="/live.html"><span class="prompt-mark">&gt;_</span><strong>SilentGuard</strong><span>PAYMENT AGENT</span></a>
+  <nav><button id="config-open" class="plain">运行配置</button></nav>
+  <div id="health" class="health" role="status"><i></i><span>连接本地 Qwen3-4B</span></div>
+</header>
+<main class="workspace">
+  <section class="heading"><div><p class="eyebrow">真实本地推理 · 连续对话 · 隔离模拟账本</p><h1>一笔付款，每一步都可检查。</h1></div><div class="heading-note">提出任务，查看模型如何调用工具。<br>局部关系分数决定文本处理，执行结果进入账本。</div></section>
+  <section class="session-toolbar" aria-label="会话设置">
+    <label>工具资料<select id="scenario"><option value="payment_notice">含伪造核验通知</option><option value="payment_clean">正常付款资料</option></select></label>
+    <label>处理策略<select id="arm"><option value="guard">SilentGuard 防护</option><option value="baseline">无防护对照</option></select></label>
+    <button id="new-session" class="secondary" disabled>新建会话</button>
+    <span class="toolbar-divider"></span>
+    <label class="history-label">保存的会话<select id="saved"><option value="">选择运行记录</option></select></label>
+    <button id="refresh-saved" class="plain" title="刷新保存记录" aria-label="刷新保存记录">↻</button>
+    <a id="download" class="download disabled" href="#" download aria-disabled="true">导出审计 JSON ↗</a>
+  </section>
+  <div id="notice" class="notice" role="alert" hidden></div>
+  <div class="lab">
+    <section class="conversation" aria-label="真实对话与工具轨迹">
+      <div class="panel-top"><div><span class="panel-tag">CONVERSATION</span><strong id="session-title">等待开始</strong></div><div><span id="session-id" class="mono muted">新会话</span><button id="follow" class="plain active" title="跟随新输出">跟随最新 ↓</button></div></div>
+      <div id="timeline" class="timeline" tabindex="0" aria-label="对话轨迹">
+        <div class="welcome"><span class="prompt-mark">&gt;_</span><h2>先查发票，再确认付款。</h2><p>原版 Qwen3-4B 根据对话生成回复和工具调用。<br>每个会话独立保存上下文、分数和模拟账本。</p><div class="welcome-tools"><code>get_invoice</code><code>transfer_money</code></div><p class="welcome-small">下方三步提示可以直接填入，也可以修改后发送。</p></div>
+      </div>
+      <form id="composer" class="composer">
+        <div class="suggestions" aria-label="三轮建议输入"><button type="button" data-prompt="0"><span>01</span> 查询发票</button><button type="button" data-prompt="1"><span>02</span> 确认付款</button><button type="button" data-prompt="2"><span>03</span> 核对账本</button></div>
+        <label class="sr-only" for="message">发送给支付助手的指令</label><textarea id="message" class="mono" rows="4" maxlength="2400" placeholder="输入给支付助手的任务，或选择上面的查询提示。"></textarea>
+        <div class="composer-bottom"><span id="composer-state">模型就绪后即可开始</span><div><span class="key-hint">⌘ / Ctrl + Enter 发送</span><button id="send" class="primary" disabled>发送 <span>↗</span></button></div></div>
+      </form>
+    </section>
+    <aside class="inspector" aria-label="读出、账本和审计">
+      <div class="inspector-tabs" role="tablist"><button id="tab-readout" data-pane="readout" role="tab" aria-selected="true">风险读出</button><button id="tab-ledger" data-pane="ledger" role="tab" aria-selected="false">支付账本 <span id="ledger-count">0</span></button><button id="tab-audit" data-pane="audit" role="tab" aria-selected="false">事件记录</button></div>
+      <section id="pane-readout" class="inspector-pane" role="tabpanel" aria-labelledby="tab-readout">
+        <div class="readout-heading"><div><p class="panel-tag">PROHIBITION PROBE</p><h2>工具返回的局部响应</h2></div><span id="readout-status" class="status-label">等待工具返回</span></div>
+        <div class="return-picker"><label for="readout-select">查看返回</label><select id="readout-select" disabled><option>尚无读出记录</option></select><button id="latest-return" class="plain" title="选择最新返回">最新</button></div>
+        <div id="progress" class="readout-progress" hidden><div><span id="progress-label">读取模型内部响应</span><span id="progress-count"></span></div><div class="progress-track"><i id="progress-bar"></i></div></div>
+        <div class="score-metrics"><div><span>最高窗口分数</span><strong id="score">—</strong></div><div><span>冻结阈值</span><strong id="threshold">—</strong></div><div><span id="edit-caption">实际删除</span><strong id="deleted">—</strong></div></div>
+        <div id="chart" class="chart"><div class="plot-empty"><span>16-token 窗口 · 35 层加权</span><p>完整工具返回到达后，展示真实分数。<br>虚线表示冻结的处理阈值。</p></div></div>
+        <div id="chart-detail" class="chart-detail mono">移动到曲线上，可检查窗口原文。</div>
+        <div class="text-tabs" role="tablist"><button data-view="heat" aria-selected="true">逐 token 热图</button><button data-view="edit" aria-selected="false">删除对照</button><button data-view="filtered" aria-selected="false">实际模型输入</button></div>
+        <div id="text-meta" class="text-meta"><span>原文与分数逐项对应</span><span class="heat-legend"><i></i>负分　0　正分</span></div>
+        <div id="readout-text" class="readout-text mono" tabindex="0">工具返回、逐 token 分数与文本编辑将在这里显示。</div>
+        <div id="token-detail" class="token-detail mono">点击词元，查看字符区间与分数。</div>
+        <div id="readout-foot" class="readout-foot">未启动推理，不显示预录分数。</div>
+      </section>
+      <section id="pane-ledger" class="inspector-pane" role="tabpanel" aria-labelledby="tab-ledger" hidden><div class="readout-heading"><div><p class="panel-tag">TOOL EXECUTION</p><h2>实际执行的模拟付款</h2></div></div><div id="ledger"></div></section>
+      <section id="pane-audit" class="inspector-pane" role="tabpanel" aria-labelledby="tab-audit" hidden><div class="readout-heading"><div><p class="panel-tag">EVENT LOG</p><h2>决策与执行记录</h2></div><span id="event-count" class="muted">0 项</span></div><div class="audit-controls" role="group" aria-label="事件显示范围"><button data-audit="key" aria-pressed="true">关键事件</button><button data-audit="all" aria-pressed="false">全部事件</button></div><p class="audit-note">保留原始序号与字段。完整生成、工具、分数与编辑可逐条展开，导出始终包含全部事件。</p><div id="audit"></div></section>
+    </aside>
+  </div>
+  <footer class="page-footer"><span id="run-summary">Qwen3-4B · 本地实时推理</span><span>所有工具仅作用于本地模拟账户与账本</span></footer>
+</main>
+<dialog id="config"><div class="dialog-head"><div><p class="panel-tag">RUNTIME</p><h2>运行配置</h2></div><button id="config-close" class="plain" aria-label="关闭">关闭 ×</button></div><p>冻结探针、窗口和阈值随会话保存。观察器独立读取规则参照，Agent 使用自己的对话上下文。</p><pre id="config-content" class="mono"></pre></dialog>
+<script src="/live.js"></script>
+</body>
+</html>
